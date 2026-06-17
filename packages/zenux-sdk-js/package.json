@@ -2,7 +2,7 @@
   "name": "@zenux/sdk",
   "version": "0.1.0",
   "description": "TypeScript/JavaScript SDK for ingesting findings and traces into Zenux",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
