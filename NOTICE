@@ -1,0 +1,26 @@
+Zenux — AI-native security engine
+Copyright (C) 2026 Scheduler Systems Ltd
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+This repository contains the open security engine:
+  - AI-native security scanners (tools/01-13)
+  - Shared scanner library and background-agent SDK (tools/lib, tools/sdk)
+  - Python and JavaScript client SDKs (packages/zenux-sdk, packages/zenux-sdk-js)
+  - Claude Code credential-leak detection hook (tools/zenux_claude_hook.sh)
+  - The OpenAPI finding-ingestion contract (openapi.yaml)
+
+The hosted multi-tenant control plane, billing, organization IAM, and
+deployment automation are NOT part of this repository.

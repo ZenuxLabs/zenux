@@ -1,0 +1,31 @@
+{
+  "name": "@zenux/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript/JavaScript SDK for ingesting findings and traces into Zenux",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && tsc -p tsconfig.types.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["zenux", "ai-security", "llm", "security", "sdk"],
+  "homepage": "https://security.example.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZenuxLabs/zenux"
+  }
+}

@@ -1,0 +1,253 @@
+openapi: 3.1.0
+info:
+  title: Zenux Ingestion Contract
+  version: 1.0.0
+  description: |
+    The Zenux ingestion contract — the public interface that the Zenux scanners,
+    SDKs, and the Claude Code credential-leak hook use to push findings, LLM
+    traces, and agent-session signals to a Zenux deployment.
+
+    This is the *client-facing* contract only. The hosted control plane
+    (findings triage, cases, assets, policies, approvals, organization IAM, and
+    background workers) is not part of this open contract.
+
+    Authentication: send `Authorization: Bearer <INGEST_SECRET>`.
+  contact:
+    name: Zenux
+    url: https://security.example.com
+  license:
+    name: AGPL-3.0-or-later
+    url: https://www.gnu.org/licenses/agpl-3.0.txt
+
+servers:
+  - url: https://security.example.com
+    description: Your Zenux deployment
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Ingest
+    description: Push findings and LLM traces from scanners, SDKs, and pipelines.
+  - name: Hooks
+    description: Agent-session and Claude Code hook signals.
+  - name: Health
+    description: Liveness checks.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      security: []
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /api/ingest/findings:
+    post:
+      tags: [Ingest]
+      summary: Ingest findings (single or batch)
+      description: |
+        Upserts findings by their natural key. A scanner, SDK, or the Claude Code
+        hook posts findings produced locally. Raw credential values are never
+        transmitted — only metadata and redacted evidence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/FindingInput'
+                - type: object
+                  required: [findings]
+                  properties:
+                    findings:
+                      type: array
+                      items: { $ref: '#/components/schemas/FindingInput' }
+            example:
+              findings:
+                - title: "Exposed Credential Detected in Claude Hook"
+                  summary: "Credential pattern was detected during a Claude hook event."
+                  source: "zenux_claude_hook:PreToolUse"
+                  threatClass: "credential_theft"
+                  severity: "critical"
+                  priority: "p1"
+                  riskScore: 95
+      responses:
+        '200':
+          description: Findings upserted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ingested: { type: integer }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/ingest/traces:
+    post:
+      tags: [Ingest]
+      summary: Ingest LLM traces (batch)
+      description: |
+        Ingests a batch of LLM call traces (for example from a LiteLLM proxy
+        guardrail). Traces are used for behavioural-drift and anomaly detection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [traces]
+              properties:
+                traces:
+                  type: array
+                  items: { $ref: '#/components/schemas/LlmTrace' }
+            example:
+              traces:
+                - model: "example-model"
+                  userId: "user@example.com"
+                  inputTokens: 1200
+                  outputTokens: 340
+                  latencyMs: 2100
+                  policyDecision: "allow"
+                  blockedBy: null
+                  timestamp: "2026-04-07T08:00:00Z"
+                  source: "litellm-proxy"
+      responses:
+        '200':
+          description: Traces processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed: { type: integer }
+                  findings: { type: integer }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/hooks/session:
+    post:
+      tags: [Hooks]
+      summary: Report an agent / Claude Code session signal
+      description: |
+        Background-agent SDK and Claude Code hook session telemetry. Only
+        metadata is sent — never raw prompts, tool I/O, or credential values.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SessionSignal' }
+      responses:
+        '200':
+          description: Signal accepted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token (`INGEST_SECRET`).
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Severity:
+      type: string
+      enum: [low, medium, high, critical]
+    Priority:
+      type: string
+      enum: [p1, p2, p3, p4]
+    ThreatClass:
+      type: string
+      enum:
+        - prompt_injection
+        - indirect_injection
+        - jailbreak
+        - data_exfiltration
+        - tool_misuse
+        - mcp_abuse
+        - credential_theft
+        - model_poisoning
+        - intent_escalation
+        - supply_chain
+    Toxicity:
+      type: object
+      description: Weighted 0-100 toxicity breakdown.
+      properties:
+        overall: { type: integer, minimum: 0, maximum: 100 }
+        accessLevel: { type: integer, minimum: 0, maximum: 10 }
+        dataExposure: { type: integer, minimum: 0, maximum: 10 }
+        lateralMovement: { type: integer, minimum: 0, maximum: 10 }
+        exploitMaturity: { type: integer, minimum: 0, maximum: 10 }
+        label: { $ref: '#/components/schemas/Severity' }
+    FindingInput:
+      type: object
+      required: [title, summary, source, threatClass, severity, priority]
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        source: { type: string, description: Emitting scanner / hook identifier. }
+        threatClass: { $ref: '#/components/schemas/ThreatClass' }
+        severity: { $ref: '#/components/schemas/Severity' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        riskScore: { type: integer, minimum: 0, maximum: 100 }
+        owaspCategory: { type: string, example: "LLM02" }
+        mitreAtlasTechnique: { type: string, example: "AML.T0040 - ML Model Access" }
+        affectedTarget: { type: string, nullable: true }
+        remediationSummary: { type: string, nullable: true }
+        remediationSteps:
+          type: array
+          items: { type: string }
+        detectedAt: { type: string, format: date-time }
+        toxicity: { $ref: '#/components/schemas/Toxicity' }
+        evidence:
+          type: string
+          description: Redacted evidence (max 800 chars). Never contains raw credentials.
+    LlmTrace:
+      type: object
+      required: [model, timestamp]
+      properties:
+        model: { type: string }
+        userId: { type: string, nullable: true }
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
+        latencyMs: { type: integer }
+        policyDecision: { type: string, enum: [allow, block], nullable: true }
+        blockedBy: { type: string, nullable: true }
+        timestamp: { type: string, format: date-time }
+        source: { type: string }
+    SessionSignal:
+      type: object
+      required: [source]
+      properties:
+        source: { type: string, example: "zenux_claude_hook:PreToolUse" }
+        target: { type: string, example: "claude-session" }
+        detectedLabel:
+          type: string
+          description: Provider label of a matched credential pattern (metadata only).
+        detectedAt: { type: string, format: date-time }
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }

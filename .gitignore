@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.tsbuildinfo
+
+# Env / secrets
+*.env
+*.env.local
+.env
+!.env.example
+
+# Scan output
+results/
+
+# OS
+.DS_Store
