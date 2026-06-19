@@ -29,7 +29,26 @@ documentation.
 
 - Keep PRs scoped to a single concern; small PRs review faster.
 - Reference any related issue.
+- Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) and complete
+  the checklist.
 - Ensure CI is green. Maintainers review on a best-effort basis.
+
+## Developer Certificate of Origin (DCO)
+
+Contributions are accepted under the repository's **AGPL-3.0-or-later** license.
+To certify that you wrote the contribution (or otherwise have the right to submit
+it under that license), sign off each commit:
+
+```bash
+git commit -s -m "your message"
+```
+
+This adds a `Signed-off-by: Your Name <you@example.com>` line, which is your
+agreement to the [Developer Certificate of Origin](https://developercertificate.org/).
+PRs whose commits are not signed off may be asked to amend.
+
+> Note: A Contributor License Agreement (CLA) may be introduced later; until
+> then, contributions are under AGPL-3.0 via DCO.
 
 ## Reporting security issues
 
