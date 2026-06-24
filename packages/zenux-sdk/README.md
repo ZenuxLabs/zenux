@@ -69,4 +69,18 @@ client.ingest_batch([finding_a, finding_b])
 
 ## License
 
-MIT. See the repository `LICENSE` and `NOTICE` for full terms.
+**Apache-2.0.** See the [`LICENSE`](./LICENSE) file in this package directory.
+
+Zenux is dual-licensed under a standard open-core model:
+
+- **This client SDK** (`zenux-sdk`) is licensed under **Apache-2.0** so that any
+  external developer can freely import and integrate it — including in
+  closed-source and commercial applications — without the copyleft obligations of
+  the AGPL. A permissive SDK is what lets the ecosystem actually adopt Zenux.
+- **The Zenux server / security engine** (the scanners, scanner library, agent
+  SDK, and ingestion services in the repository root) remains licensed under
+  **AGPL-3.0-or-later**. See the repository root [`LICENSE`](../../LICENSE) and
+  [`NOTICE`](../../NOTICE).
+
+Using this SDK to talk to a Zenux deployment does not place your application
+under the AGPL.
